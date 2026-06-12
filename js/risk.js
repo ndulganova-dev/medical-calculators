@@ -1,173 +1,146 @@
 /**
- * Упрощённая оценка сердечно-сосудистого риска и рекомендаций по статинам
- * на основе принципов рекомендаций ЕАК/НОА (2023–2025) и ESC/EAS.
- * Для пациентского информационного калькулятора.
+ * Оценка по ответам теста «Пора ли вам задуматься о статинах?»
+ * Информационный калькулятор для пациентов.
  */
 
 const RISK_LEVELS = {
-  veryHigh: {
-    id: 'veryHigh',
-    label: 'Очень высокий',
-    color: '#C45C4A',
-    ldlTarget: 1.4,
-    ldlThreshold: 1.4,
-    statinAdvice: 'strong',
-  },
-  high: {
-    id: 'high',
-    label: 'Высокий',
-    color: '#D4845C',
-    ldlTarget: 1.8,
-    ldlThreshold: 1.8,
-    statinAdvice: 'likely',
+  low: {
+    id: 'low',
+    label: 'Низкая вероятность',
+    color: '#9BB89E',
+    minScore: 0,
+    maxScore: 4,
   },
   moderate: {
     id: 'moderate',
-    label: 'Умеренный',
-    color: '#C9A86C',
-    ldlTarget: 2.6,
-    ldlThreshold: 2.6,
-    statinAdvice: 'consider',
+    label: 'Умеренная вероятность',
+    color: '#C9B07A',
+    minScore: 5,
+    maxScore: 8,
   },
-  low: {
-    id: 'low',
-    label: 'Низкий',
-    color: '#7BAE8E',
-    ldlTarget: 3.0,
-    ldlThreshold: 3.0,
-    statinAdvice: 'lifestyle',
+  elevated: {
+    id: 'elevated',
+    label: 'Повышенная вероятность',
+    color: '#D4956A',
+    minScore: 9,
+    maxScore: 12,
+  },
+  high: {
+    id: 'high',
+    label: 'Высокая вероятность',
+    color: '#C4725E',
+    minScore: 13,
+    maxScore: 99,
   },
 };
 
-function parseNumber(value) {
-  if (value === '' || value === null || value === undefined) return null;
-  const n = Number(String(value).replace(',', '.'));
-  return Number.isFinite(n) ? n : null;
+const ANSWER_LABELS = {
+  q1_cholesterol: {
+    recent: 'Недавно проверяли холестерин',
+    old: 'Давно не проверяли холестерин',
+    unknown: 'Не знаете уровень холестерина',
+  },
+  q2_bp: {
+    normal: 'Давление обычно ниже 140/90',
+    high: 'Давление часто выше 140/90',
+    not_measured: 'Давление не измеряете',
+  },
+  q3_weight: {
+    none: 'Лишнего веса нет',
+    little: 'Небольшой лишний вес',
+    much: 'Значительный лишний вес',
+  },
+  q4_activity: {
+    daily: 'Двигаетесь каждый день',
+    weekly: 'Двигаетесь несколько раз в неделю',
+    sedentary: 'Мало двигаетесь',
+  },
+  q5_family: {
+    yes: 'У родителей были инфаркт или инсульт',
+    no: 'Семейного анамнеза нет',
+    unknown: 'Семейный анамнез неизвестен',
+  },
+  q6_doctorChol: {
+    yes: 'Врач говорил о повышенном холестерине',
+    no: 'Врач не говорил о холестерине',
+    forgot: 'Не помните, говорил ли врач',
+  },
+  q7_diabetes: {
+    yes: 'Есть диабет или повышенный сахар',
+    no: 'Сахар в норме',
+    unknown: 'Уровень сахара неизвестен',
+  },
+  q8_concern: {
+    bp: 'Беспокоит давление',
+    cholesterol: 'Беспокоит холестерин',
+    sugar: 'Беспокоит сахар',
+    cvd_fear: 'Страх инфаркта или инсульта',
+    checkup: 'Хотите проверить себя',
+  },
+};
+
+const SCORE_MAP = {
+  q1_cholesterol: { recent: 0, old: 1, unknown: 2 },
+  q2_bp: { normal: 0, high: 3, not_measured: 1 },
+  q3_weight: { none: 0, little: 1, much: 3 },
+  q4_activity: { daily: 0, weekly: 1, sedentary: 2 },
+  q5_family: { yes: 3, no: 0, unknown: 1 },
+  q6_doctorChol: { yes: 3, no: 0, forgot: 1 },
+  q7_diabetes: { yes: 4, no: 0, unknown: 2 },
+};
+
+const MAX_SCORE = 18;
+
+function getScoreForAnswer(field, value) {
+  return SCORE_MAP[field]?.[value] ?? 0;
 }
 
-/**
- * Определяет категорию ССР по ответам пациента.
- */
-function assessRiskCategory(answers) {
-  const {
-    hadCardiovascularEvent,
-    diabetes,
-    diabetesComplications,
-    familialHypercholesterolemia,
-    chronicKidney,
-    ldl,
-    totalChol,
-    age,
-    sex,
-    smoking,
-    hypertension,
-    familyEarlyCVD,
-  } = answers;
-
-  if (hadCardiovascularEvent) {
-    return { ...RISK_LEVELS.veryHigh, reasons: ['Перенесённое сердечно-сосудистое заболевание (вторичная профилактика)'] };
-  }
-
-  if (familialHypercholesterolemia) {
-    return { ...RISK_LEVELS.high, reasons: ['Семейная гиперхолестеринемия'] };
-  }
-
-  if (diabetes && diabetesComplications) {
-    return { ...RISK_LEVELS.veryHigh, reasons: ['Сахарный диабет с осложнениями или поражением органов-мишеней'] };
-  }
-
-  if (chronicKidney === 'severe') {
-    return { ...RISK_LEVELS.veryHigh, reasons: ['Тяжёлая хроническая болезнь почек'] };
-  }
-
-  if (diabetes) {
-    return { ...RISK_LEVELS.high, reasons: ['Сахарный диабет'] };
-  }
-
-  if (chronicKidney === 'moderate') {
-    return { ...RISK_LEVELS.high, reasons: ['Умеренная хроническая болезнь почек'] };
-  }
-
-  const ldlValue = ldl ?? estimateLdlFromTotal(totalChol);
-  if (ldlValue !== null && ldlValue >= 4.9) {
-    return { ...RISK_LEVELS.high, reasons: ['Выраженное повышение холестерина ЛПНП (≥ 4,9 ммоль/л)'] };
-  }
-
-  const riskFactors = countRiskFactors({ age, sex, smoking, hypertension, familyEarlyCVD, ldl: ldlValue, totalChol });
-  const scoreRisk = estimateScoreRisk({ age, sex, smoking, hypertension });
-
-  if (riskFactors >= 3 || scoreRisk === 'high') {
-    return {
-      ...RISK_LEVELS.high,
-      reasons: buildRiskFactorReasons({ smoking, hypertension, familyEarlyCVD, age, sex, riskFactors }),
-    };
-  }
-
-  if (riskFactors >= 2 || scoreRisk === 'moderate' || (age >= 50 && (smoking || hypertension))) {
-    return {
-      ...RISK_LEVELS.moderate,
-      reasons: buildRiskFactorReasons({ smoking, hypertension, familyEarlyCVD, age, sex, riskFactors }),
-    };
-  }
-
-  return {
-    ...RISK_LEVELS.low,
-    reasons: ['Незначительное количество факторов риска при отсутствии тяжёлых состояний'],
-  };
+function calculateTotalScore(answers) {
+  return Object.keys(SCORE_MAP).reduce((sum, field) => {
+    return sum + getScoreForAnswer(field, answers[field]);
+  }, 0);
 }
 
-function estimateLdlFromTotal(totalChol) {
-  const tc = parseNumber(totalChol);
-  if (tc === null) return null;
-  return Math.round((tc * 0.65) * 10) / 10;
+function getRiskByScore(score) {
+  if (score >= RISK_LEVELS.high.minScore) return { ...RISK_LEVELS.high };
+  if (score >= RISK_LEVELS.elevated.minScore) return { ...RISK_LEVELS.elevated };
+  if (score >= RISK_LEVELS.moderate.minScore) return { ...RISK_LEVELS.moderate };
+  return { ...RISK_LEVELS.low };
 }
 
-function countRiskFactors({ age, sex, smoking, hypertension, familyEarlyCVD, ldl, totalChol }) {
-  let count = 0;
-  if (smoking) count++;
-  if (hypertension === 'treated' || hypertension === 'untreated') count++;
-  if (familyEarlyCVD) count++;
-  const ldlVal = ldl ?? estimateLdlFromTotal(totalChol);
-  if (ldlVal !== null && ldlVal >= 3.0) count++;
-  if (age >= 55 && sex === 'female') count++;
-  if (age >= 45 && sex === 'male') count++;
-  return count;
-}
-
-function estimateScoreRisk({ age, sex, smoking, hypertension }) {
-  if (age < 40) return 'low';
-  const hasHTN = hypertension === 'treated' || hypertension === 'untreated';
-  if (sex === 'male') {
-    if (age >= 65 && (smoking || hasHTN)) return 'high';
-    if (age >= 55 && smoking && hasHTN) return 'high';
-    if (age >= 50 && (smoking || hasHTN)) return 'moderate';
-  } else {
-    if (age >= 70 && (smoking || hasHTN)) return 'high';
-    if (age >= 60 && smoking && hasHTN) return 'moderate';
-    if (age >= 55 && (smoking || hasHTN)) return 'moderate';
-  }
-  return 'low';
-}
-
-function buildRiskFactorReasons({ smoking, hypertension, familyEarlyCVD, age, sex, riskFactors }) {
+function buildReasons(answers) {
   const reasons = [];
-  if (smoking) reasons.push('Курение');
-  if (hypertension === 'treated') reasons.push('Артериальная гипертония (на лечении)');
-  if (hypertension === 'untreated') reasons.push('Повышенное артериальное давление');
-  if (familyEarlyCVD) reasons.push('Семейный анамнез ранних сердечно-сосудистых заболеваний');
-  if (age >= 55 && sex === 'female') reasons.push('Возраст 55 лет и старше');
-  if (age >= 45 && sex === 'male') reasons.push('Возраст 45 лет и старше');
-  if (reasons.length === 0) reasons.push(`Совокупность факторов риска (${riskFactors})`);
+  Object.keys(SCORE_MAP).forEach((field) => {
+    const value = answers[field];
+    const points = getScoreForAnswer(field, value);
+    if (points > 0 && ANSWER_LABELS[field]?.[value]) {
+      reasons.push(ANSWER_LABELS[field][value]);
+    }
+  });
+  if (reasons.length === 0) {
+    reasons.push('Мало факторов, которые обычно побуждают к обсуждению статинов');
+  }
   return reasons;
 }
 
-/**
- * Формирует итоговую рекомендацию для пациента.
- */
+function getConcernTip(concern) {
+  const tips = {
+    bp: 'Начните с контроля давления дома и записи показаний. На приёме обсудите и давление, и холестерин — они часто идут вместе.',
+    cholesterol: 'Сдайте липидный профиль (общий холестерин и ЛПНП) и принесите результаты врачу — это главный аргумент для решения о статинах.',
+    sugar: 'Проверьте уровень глюкозы и гликированный гемоглобин. При диабете статины часто рекомендуют для защиты сосудов.',
+    cvd_fear: 'Ваше беспокойство понятно. Лучший способ снизить страх — пройти обследование и обсудить с врачом персональный план профилактики.',
+    checkup: 'Отличный повод для профилактического визита: анализы крови, давление и разговор о статинах, если они действительно нужны.',
+  };
+  return tips[concern] || tips.checkup;
+}
+
 function getStatinRecommendation(answers) {
-  const risk = assessRiskCategory(answers);
-  const ldl = parseNumber(answers.ldl) ?? estimateLdlFromTotal(answers.totalChol);
-  const onStatin = answers.onStatin === true;
+  const score = calculateTotalScore(answers);
+  const risk = getRiskByScore(score);
+  const percent = Math.min(100, Math.round((score / MAX_SCORE) * 100));
+  const reasons = buildReasons(answers);
+  const concernTip = getConcernTip(answers.q8_concern);
+  const concernLabel = ANSWER_LABELS.q8_concern[answers.q8_concern] || '';
 
   let level;
   let title;
@@ -175,98 +148,82 @@ function getStatinRecommendation(answers) {
   let actions;
   let emoji;
 
-  if (risk.id === 'veryHigh') {
-    if (onStatin) {
-      level = 'info';
-      title = 'Вы уже принимаете статины — это правильный шаг';
-      summary = 'При очень высоком риске статины — основа терапии. Обсудите с врачом, достигнут ли ваш целевой уровень холестерина ЛПНП.';
-      emoji = '✅';
-      actions = [
-        'Проверьте, достигли ли вы цели по ЛПНП (< 1,4 ммоль/л)',
-        'Не прекращайте приём без согласования с врачом',
-        'Контролируйте анализы каждые 6–12 месяцев',
-      ];
-    } else {
+  switch (risk.id) {
+    case 'high':
       level = 'urgent';
-      title = 'Да, обсудите статины с врачом как можно скорее';
-      summary = 'У вас очень высокий сердечно-сосудистый риск. Статины, как правило, рекомендованы независимо от уровня холестерина.';
+      title = 'Да, вам стоит серьёзно задуматься о статинах';
+      summary = 'По вашим ответам накопилось несколько важных факторов риска. Скорее всего, врач порекомендует обследование и обсуждение терапии статинами.';
       emoji = '❤️‍🩹';
       actions = [
-        'Запишитесь на приём к терапевту или кардиологу',
-        'Обсудите начало или продолжение терапии статинами',
-        'Параллельно важны отказ от курения, питание и физическая активность',
+        'Запишитесь к терапевту или кардиологу в ближайшие недели',
+        'Сдайте липидный профиль и проверьте сахар крови',
+        'Расскажите врачу о давлении, весе и семейном анамнезе',
+        'Не откладывайте — профилактика работает лучше всего вовремя',
       ];
-    }
-  } else if (ldl === null) {
-    level = 'info';
-    title = 'Сначала нужен анализ крови';
-    summary = `Ваша предварительная категория риска — «${risk.label}». Без уровня холестерина ЛПНП точную рекомендацию дать нельзя.`;
-    emoji = '🩺';
-    actions = [
-      'Сдайте липидный профиль (холестерин, ЛПНП, ЛПВП, триглицериды)',
-      `При риске «${risk.label}» врач ориентируется на порог ЛПНП ≥ ${risk.ldlThreshold} ммоль/л`,
-      'Принесите результаты на консультацию',
-    ];
-  } else if (ldl >= risk.ldlThreshold) {
-    if (onStatin) {
-      level = 'info';
-      title = 'Возможно, нужна коррекция терапии';
-      summary = `Ваш ЛПНП ${formatLdl(ldl)} ммоль/л выше целевого для категории «${risk.label}» (< ${risk.ldlTarget} ммоль/л).`;
-      emoji = '📋';
-      actions = [
-        'Обсудите с врачом усиление терапии или добавление других препаратов',
-        'Пересмотрите питание и физическую активность',
-        'Повторите анализ через 6–8 недель после изменения лечения',
-      ];
-    } else {
-      level = risk.id === 'low' ? 'consider' : 'likely';
-      title = risk.id === 'low'
-        ? 'Стоит обсудить статины с врачом'
-        : 'Скорее всего, вам стоит задуматься о статинах';
-      summary = `При риске «${risk.label}» и ЛПНП ${formatLdl(ldl)} ммоль/л (порог ≥ ${risk.ldlThreshold}) терапия статинами обычно рассматривается после 3–6 месяцев изменения образа жизни.`;
+      break;
+    case 'elevated':
+      level = 'likely';
+      title = 'Скорее всего, пора обсудить статины с врачом';
+      summary = 'У вас есть заметные факторы риска. Даже если статины не понадобятся сразу, визит к врачу и анализы — необходимый шаг.';
       emoji = '💬';
       actions = [
-        'Сначала попробуйте модификацию образа жизни 3–6 месяцев',
-        'Ограничьте насыщенные жиры, увеличьте овощи, клетчатку и движение',
-        'Если ЛПНП не снизится — обсудите статины с врачом',
+        'Сдайте анализ крови на холестерин (ЛПНП)',
+        'Измеряйте давление несколько дней подряд',
+        'Обсудите с врачом пользу статинов именно для вас',
+        'Начните с изменения питания и движения — это тоже лечение',
       ];
-    }
-  } else {
-    level = 'positive';
-    title = 'Пока статины, скорее всего, не нужны';
-    summary = `Ваш ЛПНП ${formatLdl(ldl)} ммоль/л ниже порога ${risk.ldlThreshold} ммоль/л для категории «${risk.label}».`;
-    emoji = '🌿';
-    actions = [
-      'Продолжайте здоровый образ жизни',
-      'Контролируйте холестерин раз в 1–2 года',
-      'При появлении новых факторов риска — пересмотрите с врачом',
-    ];
+      break;
+    case 'moderate':
+      level = 'consider';
+      title = 'Есть повод навести врача';
+      summary = 'Пока ситуация не выглядит критичной, но некоторые ответы говорят: стоит провериться и поговорить о профилактике.';
+      emoji = '🩺';
+      actions = [
+        'Проверьте холестерин, если давно не сдавали',
+        'Контролируйте давление и вес',
+        'На приёме спросите: нужны ли вам статины сейчас или пока нет',
+        'Увеличьте ежедневную активность — это снижает риск',
+      ];
+      break;
+    default:
+      level = 'positive';
+      title = 'Пока поводов для статинов немного';
+      summary = 'По вашим ответам риск выглядит невысоким. Но профилактический осмотр и анализы раз в 1–2 года всё равно полезны.';
+      emoji = '🌿';
+      actions = [
+        'Продолжайте двигаться и следить за питанием',
+        'Периодически проверяйте холестерин и давление',
+        'Если что-то изменится — пересдайте тест или обратитесь к врачу',
+      ];
+      break;
+  }
+
+  if (answers.q7_diabetes === 'yes' && risk.id !== 'high') {
+    summary += ' Учитывая сахарный диабет или его риск, врач может рекомендовать статины даже при умеренном холестерине.';
   }
 
   return {
+    score,
+    maxScore: MAX_SCORE,
+    percent,
     risk,
-    ldl,
+    reasons,
+    concernTip,
+    concernLabel,
     level,
     title,
     summary,
     actions,
     emoji,
-    onStatin,
   };
 }
 
-function formatLdl(value) {
-  return String(value).replace('.', ',');
-}
-
 if (typeof window !== 'undefined') {
-  window.assessRiskCategory = assessRiskCategory;
   window.getStatinRecommendation = getStatinRecommendation;
   window.RISK_LEVELS = RISK_LEVELS;
-  window.parseNumber = parseNumber;
-  window.formatLdl = formatLdl;
+  window.calculateTotalScore = calculateTotalScore;
 }
 
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { assessRiskCategory, getStatinRecommendation, RISK_LEVELS, parseNumber, formatLdl };
+  module.exports = { getStatinRecommendation, RISK_LEVELS, calculateTotalScore };
 }
