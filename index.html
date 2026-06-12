@@ -19,44 +19,99 @@
   <div class="app">
     <header class="header">
       <div class="header__inner">
-        <div class="header__brand">
-          <span class="header__icon" aria-hidden="true">💊</span>
-          <div>
-            <h1 class="header__title">Пора ли вам задуматься о статинах?</h1>
-            <p class="header__subtitle">Интерактивный калькулятор для пациентов</p>
-          </div>
-        </div>
+        <h1 class="header__title">Пора ли вам задуматься о статинах?</h1>
+        <p class="header__subtitle">Интерактивный калькулятор для пациентов</p>
         <div class="header__progress" id="progressBar" hidden>
           <div class="header__progress-track">
             <div class="header__progress-fill" id="progressFill"></div>
           </div>
-          <span class="header__progress-text" id="progressText">Шаг 1 из 8</span>
+          <span class="header__progress-text" id="progressText">Вопрос 1 из 8</span>
         </div>
       </div>
     </header>
 
     <main class="main">
-      <div class="layout">
-        <aside class="guide" id="guidePanel">
-          <div class="guide__card">
-            <div class="guide__photo-wrap">
-              <img
-                src="assets/author.png"
-                alt="Надежда Дулганова — врач-терапевт"
-                class="guide__photo"
-                width="280"
-                height="350"
+      <div class="container">
+        <section class="doctor-hero" aria-labelledby="doctor-name">
+          <div class="doctor-hero__photo-wrap">
+            <img
+              src="assets/author.png"
+              alt="Надежда Дулганова — врач-терапевт"
+              class="doctor-hero__photo"
+              width="320"
+              height="400"
+            >
+          </div>
+          <div class="doctor-hero__content">
+            <h2 class="doctor-hero__name" id="doctor-name">Надежда Дулганова</h2>
+            <div class="doctor-credentials">
+              <a
+                href="https://drdulganova.ru/audiorazbor"
+                class="doctor-credentials__item scroll-reveal"
+                style="--i:0"
+                target="_blank"
+                rel="noopener noreferrer"
+              >Врач-терапевт первой категории</a>
+              <a
+                href="https://drdulganova.ru/audiorazbor"
+                class="doctor-credentials__item scroll-reveal"
+                style="--i:1"
+                target="_blank"
+                rel="noopener noreferrer"
+              >Нутрициолог</a>
+              <a
+                href="https://drdulganova.ru/audiorazbor"
+                class="doctor-credentials__item scroll-reveal"
+                style="--i:2"
+                target="_blank"
+                rel="noopener noreferrer"
+              >Психолог</a>
+            </div>
+            <div class="doctor-hero__greeting">
+              <p class="doctor-hero__hello">Здравствуйте!</p>
+              <p>Я врач <strong>Надежда Дулганова</strong>.</p>
+              <p>Уже много лет помогаю пациентам разобраться с повышенным давлением, холестерином, сахаром крови и результатами анализов.</p>
+              <p>Этот калькулятор создан для того, чтобы помочь вам лучше понять свои риски и подготовиться к разговору с врачом.</p>
+            </div>
+            <div class="doctor-hero__cta-wrap">
+              <a
+                href="https://drdulganova.ru/audiorazbor"
+                class="btn btn--cta-green btn--hero"
+                target="_blank"
+                rel="noopener noreferrer"
               >
-            </div>
-            <div class="guide__info">
-              <p class="guide__name">Надежда Дулганова</p>
-              <p class="guide__role">Врач-терапевт первой категории</p>
-            </div>
-            <div class="guide__bubble" id="guideBubble">
-              <p id="guideMessage">Здравствуйте! Я помогу вам разобраться, стоит ли обсудить с врачом терапию статинами. Это займёт всего пару минут.</p>
+                Получить персональный аудиоразбор анализов
+              </a>
             </div>
           </div>
-        </aside>
+        </section>
+
+        <section class="audience-section" aria-label="Для кого этот калькулятор">
+          <h2 class="audience-section__title scroll-reveal">Забота о здоровье в любом возрасте</h2>
+          <p class="audience-section__lead scroll-reveal">Калькулятор поможет разобраться с холестерином, давлением и рисками — спокойно и понятным языком.</p>
+          <div class="audience-section__grid">
+            <figure class="audience-card scroll-reveal" style="--i:0">
+              <img src="assets/audience-woman-tests.png" alt="Женщина старше 50 лет изучает результаты анализов" width="400" height="320" loading="lazy">
+              <figcaption>Разбор результатов анализов</figcaption>
+            </figure>
+            <figure class="audience-card scroll-reveal" style="--i:1">
+              <img src="assets/audience-bp.png" alt="Мужчина старше 50 лет измеряет давление тонометром" width="400" height="320" loading="lazy">
+              <figcaption>Контроль давления дома</figcaption>
+            </figure>
+            <figure class="audience-card scroll-reveal" style="--i:2">
+              <img src="assets/audience-couple.png" alt="Пара старше 50 лет на приёме у врача" width="400" height="320" loading="lazy">
+              <figcaption>Приём у врача вместе</figcaption>
+            </figure>
+            <figure class="audience-card scroll-reveal" style="--i:3">
+              <img src="assets/audience-consultation.png" alt="Врач обсуждает результаты обследования с пациентом" width="400" height="320" loading="lazy">
+              <figcaption>Обсуждение обследования</figcaption>
+            </figure>
+          </div>
+        </section>
+
+        <div class="hint-bar" id="hintBar" hidden>
+          <p id="guideMessage"></p>
+        </div>
 
         <section class="game" id="gamePanel" aria-live="polite">
           <!-- Screens rendered by JS -->
@@ -65,12 +120,50 @@
     </main>
 
     <footer class="footer">
-      <p class="footer__disclaimer">
-        Калькулятор носит информационный характер и не заменяет консультацию врача.
-        Решение о назначении статинов принимает лечащий врач с учётом вашего состояния и анализов.
-      </p>
-      <p class="footer__credit">© 2026 Надежда Дулганова</p>
+      <div class="footer__inner">
+        <section class="footer__section footer__section--feedback">
+          <h2 class="footer__heading">Обратная связь</h2>
+          <p>Если у вас возникли вопросы по результатам калькулятора, вы можете воспользоваться услугой аудиоразбора анализов или записаться на консультацию.</p>
+          <a
+            href="https://drdulganova.ru/audiorazbor"
+            class="btn btn--cta-green btn--footer"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Получить персональный аудиоразбор анализов
+          </a>
+        </section>
+
+        <p class="footer__credit">© 2026 Надежда Дулганова</p>
+      </div>
     </footer>
+
+    <aside class="legal-bar" aria-label="Юридическая информация">
+      <div class="legal-bar__inner">
+        <p class="legal-bar__ip">ИП Дулганова Надежда Геннадьевна</p>
+        <p class="legal-bar__meta">ИНН 753601193970 · ОГРН 32378470050414</p>
+        <nav class="legal-bar__nav">
+          <a href="#" class="legal-bar__link">Дипломы и сертификаты</a>
+          <span class="legal-bar__dot" aria-hidden="true">·</span>
+          <a href="#" class="legal-bar__link">Договор оферты</a>
+          <span class="legal-bar__dot" aria-hidden="true">·</span>
+          <a href="#" class="legal-bar__link">Политика конфиденциальности</a>
+        </nav>
+        <p class="legal-bar__contact">
+          Контакты: по вопросам сотрудничества и рекламы —
+          <a href="https://t.me/DulganovIvan" class="legal-bar__link" target="_blank" rel="noopener noreferrer">Telegram @DulganovIvan</a>
+        </p>
+        <p class="legal-bar__note">Не является публичной офертой.</p>
+        <p class="legal-bar__copyright">
+          Использование материалов сайта допускается только с письменного разрешения правообладателя.
+          Иначе это является нарушением авторских и смежных прав правообладателя.
+        </p>
+        <p class="legal-bar__disclaimer">
+          Информация на сайте носит исключительно информационный характер и не заменяет консультацию врача.
+          Перед началом приёма любых лекарственных препаратов необходимо проконсультироваться со специалистом.
+        </p>
+      </div>
+    </aside>
   </div>
 
   <script src="js/risk.js"></script>

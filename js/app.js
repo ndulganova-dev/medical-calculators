@@ -257,7 +257,7 @@
 
   const gamePanel = document.getElementById('gamePanel');
   const guideMessage = document.getElementById('guideMessage');
-  const guideBubble = document.getElementById('guideBubble');
+  const hintBar = document.getElementById('hintBar');
   const progressBar = document.getElementById('progressBar');
   const progressFill = document.getElementById('progressFill');
   const progressText = document.getElementById('progressText');
@@ -283,11 +283,15 @@
     progressText.textContent = `Вопрос ${current} из ${totalQuestions()}`;
   }
 
-  function setGuide(text) {
+  function setGuide(text, show = true) {
+    if (!guideMessage || !hintBar) return;
     guideMessage.textContent = text;
-    guideBubble.classList.remove('guide__bubble--pop');
-    void guideBubble.offsetWidth;
-    guideBubble.classList.add('guide__bubble--pop');
+    hintBar.hidden = !show || !text;
+    if (show && text) {
+      hintBar.classList.remove('hint-bar--pop');
+      void hintBar.offsetWidth;
+      hintBar.classList.add('hint-bar--pop');
+    }
   }
 
   function escapeHtml(str) {
@@ -314,6 +318,9 @@
 
     return `
       <div class="facts-carousel">
+        <div class="facts-carousel__visual scroll-reveal">
+          <img src="assets/audience-consultation.png" alt="Врач обсуждает лечение с пациентом" loading="lazy">
+        </div>
         <p class="facts-carousel__heading">5 фактов о статинах</p>
         <div class="facts-carousel__card fact-flip">
           <span class="facts-carousel__num">${i + 1} / 5</span>
@@ -436,11 +443,11 @@
           <ul class="lipid-cta__list">${benefitsHtml}</ul>
           <a
             href="https://drdulganova.ru/audiorazbor"
-            class="btn btn--cta btn--large"
+            class="btn btn--cta-green btn--large"
             target="_blank"
             rel="noopener noreferrer"
           >
-            Получить аудиоразбор анализов
+            Получить персональный аудиоразбор анализов
             <span class="btn__arrow">→</span>
           </a>
         </div>
@@ -458,8 +465,13 @@
     `).join('');
 
     return `
-      <div class="facts-block">
-        <h3 class="facts-block__title">5 фактов о статинах</h3>
+      <div class="facts-block scroll-reveal">
+        <div class="facts-block__header">
+          <div class="facts-block__visual">
+            <img src="assets/audience-couple.png" alt="Пациенты на консультации у врача" loading="lazy">
+          </div>
+          <h3 class="facts-block__title">5 фактов о статинах</h3>
+        </div>
         <ol class="facts-list">${items}</ol>
       </div>
     `;
@@ -469,22 +481,31 @@
     return `
       <div class="screen screen--welcome ${slideClass()}">
         <div class="welcome-card">
+          <div class="welcome-visual welcome-visual--top scroll-reveal">
+            <img
+              src="assets/audience-bp.png"
+              alt="Мужчина старше 50 лет измеряет давление тонометром"
+              loading="lazy"
+            >
+          </div>
           <div class="welcome-card__badge pulse-badge">🎮 Интерактивный тест</div>
-          <h2 class="screen__title">Добро пожаловать!</h2>
+          <h2 class="screen__title">Готовы начать тест?</h2>
+          <p class="welcome-visual__caption">Начните с простых вопросов о вашем здоровье</p>
           <p class="screen__text">
-            8 коротких вопросов помогут понять, <strong>пора ли вам обсудить со врачом статины</strong>.
-            Отвечайте честно — это займёт пару минут.
+            8 простых вопросов помогут понять, <strong>пора ли обсудить со врачом статины</strong>.
+            Отвечайте честно — это займёт около двух минут.
           </p>
-          ${renderFactsCarousel()}
           <ul class="welcome-card__features">
             <li class="stagger-item" style="--i:0"><span>⏱</span> 2 минуты</li>
             <li class="stagger-item" style="--i:1"><span>📝</span> 8 вопросов</li>
             <li class="stagger-item" style="--i:2"><span>📱</span> На телефоне и ПК</li>
           </ul>
-          <button type="button" class="btn btn--primary btn--large" data-action="next">
-            Начать тест
-            <span class="btn__arrow">→</span>
-          </button>
+          <div class="welcome-card__cta-wrap">
+            <button type="button" class="btn btn--primary btn--large btn--test" data-action="next">
+              Пройти тест
+              <span class="btn__arrow">→</span>
+            </button>
+          </div>
         </div>
       </div>
     `;
@@ -620,19 +641,21 @@
   }
 
   function initScrollAnimations() {
-    const targets = gamePanel.querySelectorAll('.lipid-animate:not(.lipid-animate--visible)');
+    const targets = document.querySelectorAll(
+      '.lipid-animate:not(.lipid-animate--visible), .scroll-reveal:not(.scroll-reveal--visible)'
+    );
     if (!targets.length) return;
 
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
-            entry.target.classList.add('lipid-animate--visible');
+            entry.target.classList.add('lipid-animate--visible', 'scroll-reveal--visible');
             observer.unobserve(entry.target);
           }
         });
       },
-      { threshold: 0.12, rootMargin: '0px 0px -40px 0px' }
+      { threshold: 0.1, rootMargin: '0px 0px -30px 0px' }
     );
 
     targets.forEach((el) => observer.observe(el));
@@ -650,17 +673,17 @@
   function render() {
     if (state.stepIndex >= STEPS.length) {
       gamePanel.innerHTML = renderResult();
-      setGuide('Ниже — простой разбор липидограммы. Отметьте, какие анализы у вас есть, и при необходимости закажите аудиоразбор.');
+      setGuide('Ниже — простой разбор липидограммы. Отметьте, какие анализы у вас есть, и при необходимости закажите аудиоразбор.', true);
       progressBar.hidden = false;
       progressFill.style.width = '100%';
       progressText.textContent = 'Результат';
       bindEvents();
-      initScrollAnimations();
+      requestAnimationFrame(() => initScrollAnimations());
       return;
     }
 
     const step = currentStep();
-    setGuide(step.guide || step.title);
+    setGuide(step.guide || step.title, step.type !== 'welcome');
 
     let html = '';
     if (step.type === 'welcome') html = renderWelcome();
@@ -768,7 +791,9 @@
 
     bindFactsEvents();
     bindLipidEvents();
+    initScrollAnimations();
   }
 
   render();
+  initScrollAnimations();
 })();

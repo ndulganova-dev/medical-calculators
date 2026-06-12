@@ -7,7 +7,7 @@ const RISK_LEVELS = {
   low: {
     id: 'low',
     label: 'Низкая вероятность',
-    color: '#9BB89E',
+    color: '#8FA892',
     minScore: 0,
     maxScore: 4,
   },
@@ -21,14 +21,14 @@ const RISK_LEVELS = {
   elevated: {
     id: 'elevated',
     label: 'Повышенная вероятность',
-    color: '#D4956A',
+    color: '#C4A07A',
     minScore: 9,
     maxScore: 12,
   },
   high: {
     id: 'high',
     label: 'Высокая вероятность',
-    color: '#C4725E',
+    color: '#A67C6B',
     minScore: 13,
     maxScore: 99,
   },
