@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Интерактивный калькулятор: пора ли вам задуматься о статинах? Автор — Надежда Дулганова, врач-терапевт.">
+  <title>Пора ли вам задуматься о статинах?</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <div class="header__inner">
+        <div class="header__brand">
+          <span class="header__icon" aria-hidden="true">💊</span>
+          <div>
+            <h1 class="header__title">Пора ли вам задуматься о статинах?</h1>
+            <p class="header__subtitle">Интерактивный калькулятор для пациентов</p>
+          </div>
+        </div>
+        <div class="header__progress" id="progressBar" hidden>
+          <div class="header__progress-track">
+            <div class="header__progress-fill" id="progressFill"></div>
+          </div>
+          <span class="header__progress-text" id="progressText">Шаг 1 из 8</span>
+        </div>
+      </div>
+    </header>
+
+    <main class="main">
+      <div class="layout">
+        <aside class="guide" id="guidePanel">
+          <div class="guide__card">
+            <div class="guide__photo-wrap">
+              <img
+                src="assets/author.png"
+                alt="Надежда Дулганова — врач-терапевт"
+                class="guide__photo"
+                width="280"
+                height="350"
+              >
+            </div>
+            <div class="guide__info">
+              <p class="guide__name">Надежда Дулганова</p>
+              <p class="guide__role">Врач-терапевт первой категории</p>
+            </div>
+            <div class="guide__bubble" id="guideBubble">
+              <p id="guideMessage">Здравствуйте! Я помогу вам разобраться, стоит ли обсудить с врачом терапию статинами. Это займёт всего пару минут.</p>
+            </div>
+          </div>
+        </aside>
+
+        <section class="game" id="gamePanel" aria-live="polite">
+          <!-- Screens rendered by JS -->
+        </section>
+      </div>
+    </main>
+
+    <footer class="footer">
+      <p class="footer__disclaimer">
+        Калькулятор носит информационный характер и не заменяет консультацию врача.
+        Решение о назначении статинов принимает лечащий врач с учётом вашего состояния и анализов.
+      </p>
+      <p class="footer__credit">© 2026 Надежда Дулганова</p>
+    </footer>
+  </div>
+
+  <script src="js/risk.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
